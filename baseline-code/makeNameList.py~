@@ -1,0 +1,78 @@
+from textblob import TextBlob
+from textblob import Word
+import textblob_aptagger
+import codecs
+import string
+import sys
+import re
+from sets import Set
+
+# Initialise tagger
+pt = textblob_aptagger.PerceptronTagger()
+
+# Load first name set
+firstname_set = Set([]);
+for line in codecs.open('lists/all_firstname.txt', encoding='utf-8'):
+    firstname_set.add(repr(line.strip()));
+
+# Load surname set
+surname_set = Set([]);
+for line in codecs.open('lists/all_surname.txt', encoding='utf-8'):
+    surname_set.add(repr(line.strip()));
+
+def runScript(f1, f2,f3):
+	text = codecs.open(f1, 'r', encoding='utf-8')
+	text_out = open(f2, 'w')
+	names_out = open(f3, 'w')
+	count = 0;
+	#text=open(sys.argv[1], 'r')
+	text_lines = []
+	tmpline = ""
+	for line in text:
+		# Add some pre-processing here (boilerplate removal, etc)
+		# Remove links, marked by a * in lynx
+		ctn = line.encode('ascii', 'ignore');
+		repls = ('\n' , ''), ('            ' , ''),('^', '');
+		txt = reduce(lambda a, kv: a.replace(*kv), repls, ctn);
+		text_lines.append(txt)
+	text.close()
+	for l in text_lines:
+#		print str(count) + " " + l;
+#		count+=1;
+		taggedline = ""
+		l = l.rstrip('\n')
+		try:
+			tags = pt.tag(l)
+#			print tags;
+			if len(tags) > 0:
+				# For POS tag
+				for word in tags:
+					surface = word[0]
+					pos = word[1]
+    #				print word
+					try:
+						if pos[0] == 'N' or pos[0] == 'V':
+							tag = Word(surface).lemmatize(
+								pos[0].lower()) + "_" + pos
+						else:
+							tag = Word(surface).lemmatize().lower() + "_" + pos
+						taggedline = taggedline + tag + " "
+					except:
+						taggedline = taggedline + surface + "_" + pos + " "
+						print taggedline;
+				# For Name tag
+#				for i in xrange(1,len(tags)):
+#					if tag[i-1][1]=="NNP" && tag[i][1]=="NNP" (&& tag[i-1][0] in firstname_set) && (tag[i][1]in surname_set):
+#						names_out.write(tag[i-1][0]+ " " +tag[i][0]+"\n");
+		except:
+			print "ERROR processing line", l
+#		print taggedline;
+#		to_print = taggedline + "\n"
+#        print to_print;
+        text_out.write(to_print)
+	text_out.close()
+	names_out.close();
+
+if __name__ == '__main__':
+	# when executing as script
+	runScript(sys.argv[1], sys.argv[2], sys.argv[3])
