@@ -1,0 +1,1 @@
+db.getCollection('stockdata_USA300m').find().forEach(function(doc){doc.Converted_GMT_time = new ISODate(doc.Converted_GMT_time);db.getCollection('stockdata_USA300m').save(doc)});
